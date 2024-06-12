@@ -1,0 +1,85 @@
+version: '2.0'
+services:
+
+#------Database------#
+
+  mariadb-node-1:
+    image: mariadb
+    container_name: mariadb-node-1
+    environment:
+      - MARIADB_ROOT_PASSWORD=alex
+    ports:
+      - 3307:3306
+    volumes:
+      - 'mariadb-node-1-volume:/var/lib/mysql:Z'
+      # - './maxscale_init.sql:/docker-entrypoint-initdb.d/init.sql'
+      - './mariadb-node-1-galera.cnf:/etc/mysql/mariadb.conf.d/galera.cnf'
+
+  mariadb-node-2:
+    image: mariadb
+    container_name: mariadb-node-2
+    environment:
+      - MARIADB_ROOT_PASSWORD=alex
+    ports:
+      - 3308:3306
+    depends_on:
+      - mariadb-node-1
+    volumes:
+      - 'mariadb-node-2-volume:/var/lib/mysql:Z'
+      - './maxscale_init.sql:/docker-entrypoint-initdb.d/init.sql'
+      - './mariadb-node-2-galera.cnf:/etc/mysql/mariadb.conf.d/galera.cnf'
+
+  maxscale:
+    image: mariadb/maxscale:latest
+    ports:
+      - 8989:8989
+      - 4006:4006
+    depends_on:
+      - mariadb-node-1
+      - mariadb-node-2
+    volumes:
+      - './maxscale.cnf:/etc/maxscale.cnf'
+
+#------Keycloak------#
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:22.0.3
+    command: start-dev
+    ports:
+      - 8080:8080
+    depends_on:
+      - maxscale
+    environment:
+      - KC_DB=mariadb
+      - KC_DB_USERNAME=maxscale
+      - KC_DB_PASSWORD=mariadb
+      - KC_HOSTNAME_DEBUG=true
+      - KC_DB_URL_HOST=maxscale
+      - KC_DB_URL_PORT=4006
+      - KC_DB_URL_DATABASE=keycloak-database
+      - KC_HOSTNAME_STRICT=false
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_TRANSACTION_XA_ENABLED=false
+
+#------Front-end-Production------#
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8081:8081"
+
+
+#------Back-end-Production------#
+
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+
+
+#------------#
+
+volumes:
+  mariadb-node-1-volume:
+  mariadb-node-2-volume:
