@@ -12,7 +12,7 @@ services:
       - 3307:3306
     volumes:
       - 'mariadb-node-1-volume:/var/lib/mysql:Z'
-      # - './maxscale_init.sql:/docker-entrypoint-initdb.d/init.sql'
+      - './maxscale_init.sql:/docker-entrypoint-initdb.d/init.sql'
       - './mariadb-node-1-galera.cnf:/etc/mysql/mariadb.conf.d/galera.cnf'
 
   mariadb-node-2:
@@ -26,11 +26,12 @@ services:
       - mariadb-node-1
     volumes:
       - 'mariadb-node-2-volume:/var/lib/mysql:Z'
-      - './maxscale_init.sql:/docker-entrypoint-initdb.d/init.sql'
+     # - './maxscale_init.sql:/docker-entrypoint-initdb.d/init.sql'
       - './mariadb-node-2-galera.cnf:/etc/mysql/mariadb.conf.d/galera.cnf'
 
   maxscale:
     image: mariadb/maxscale:latest
+    container_name: maxscale
     ports:
       - 8989:8989
       - 4006:4006
@@ -45,6 +46,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:22.0.3
     command: start-dev
+    container_name: keycloak
     ports:
       - 8080:8080
     depends_on:
@@ -64,19 +66,20 @@ services:
 
 #------Front-end-Production------#
 
-  frontend:
-    build: ./frontend
+  react-app:
+    container_name: react-app
+    build: ./front-end-project/.
     ports:
-      - "8081:8081"
+      - 3000:3000
 
 
 #------Back-end-Production------#
 
-  backend:
-    build: ./backend
+  flask-app:
+    container_name: flask-app
+    build: ./VOT-Web-Service-Application/.
     ports:
-      - "5000:5000"
-
+      - 5000:5000
 
 #------------#
 
