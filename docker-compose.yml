@@ -75,12 +75,6 @@ services:
 
 #------Back-end-Production------#
 
-  flask-app:
-    container_name: flask-app
-    build: ./VOT-Web-Service-Application/.
-    ports:
-      - 5000:5000
-
 #------------#
 
 volumes:
